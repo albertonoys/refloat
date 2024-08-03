@@ -493,6 +493,7 @@ static void status_animate(
         bool reverse = strip == &leds->front_strip;
         if (leds->status_duty_blend < 1.0f) {
             float battery = VESC_IF->mc_get_battery_level(NULL);
+
             anim_progress_bar(
                 leds, strip, battery, BATTERY_COLOR, false, reverse, fminf(blend, 1.0f - idle_blend)
             );
@@ -673,20 +674,20 @@ static const LedBar *target_bar(const Leds *leds, bool flip) {
 }
 
 bool leds_init(Leds *leds, CfgHwLeds *hw_cfg, const CfgLeds *cfg, FootpadSensorState fs_state) {
-    leds->status_strip.start = 0;
-    leds->status_strip.length = hw_cfg->status.count;
+    leds->status_strip.start = hw_cfg->status.start - 1;
+    leds->status_strip.length = hw_cfg->status.end - leds->status_strip.start;
     leds->status_strip.reverse = hw_cfg->status.reverse;
     if (cfg->headlights_on) {
         leds->status_strip.brightness = cfg->status.brightness_headlights_on;
     } else {
         leds->status_strip.brightness = cfg->status.brightness_headlights_off;
     }
-    leds->front_strip.start = hw_cfg->status.count;
-    leds->front_strip.length = hw_cfg->front.count;
+    leds->front_strip.start = hw_cfg->front.start - 1;
+    leds->front_strip.length = hw_cfg->front.end - leds->front_strip.start;
     leds->front_strip.reverse = hw_cfg->front.reverse;
     leds->front_strip.brightness = cfg->front.brightness;
-    leds->rear_strip.start = hw_cfg->status.count + hw_cfg->front.count;
-    leds->rear_strip.length = hw_cfg->rear.count;
+    leds->rear_strip.start = hw_cfg->rear.start - 1;
+    leds->rear_strip.length = hw_cfg->rear.end - leds->rear_strip.start;
     leds->rear_strip.reverse = hw_cfg->rear.reverse;
     leds->rear_strip.brightness = cfg->rear.brightness;
 
@@ -732,7 +733,8 @@ bool leds_init(Leds *leds, CfgHwLeds *hw_cfg, const CfgLeds *cfg, FootpadSensorS
     leds->rear_dir_target = &cfg->rear;
     leds->rear_time_target = &cfg->rear;
 
-    leds->led_count = leds->rear_strip.start + leds->rear_strip.length;
+    leds->led_count =
+        leds->status_strip.length + leds->front_strip.length + leds->rear_strip.length;
 
     bool driver_init = true;
     if (fs_state == FS_BOTH) {
@@ -740,7 +742,7 @@ bool leds_init(Leds *leds, CfgHwLeds *hw_cfg, const CfgLeds *cfg, FootpadSensorS
         driver_init = false;
     }
 
-    if (hw_cfg->front.count + hw_cfg->rear.count > LEDS_FRONT_AND_REAR_COUNT_MAX) {
+    if (leds->front_strip.length + leds->rear_strip.length > LEDS_FRONT_AND_REAR_COUNT_MAX) {
         log_error("Front and rear LED counts exceed maximum.");
         driver_init = false;
     }

@@ -133,7 +133,8 @@ typedef struct {
 } CfgLeds;
 
 typedef struct {
-    uint8_t count;
+    uint8_t start;
+    uint8_t end;
     bool reverse;
 } CfgLedStrip;
 

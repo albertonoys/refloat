@@ -2750,7 +2750,7 @@ INIT_FUN(lib_info *info) {
 
     footpad_sensor_update(&d->footpad_sensor, &d->float_conf);
 
-    d->main_thread = VESC_IF->spawn(refloat_thd, 1024, "Refloat Main", d);
+    d->main_thread = VESC_IF->spawn(refloat_thd, 2048, "Refloat Main", d);
     if (!d->main_thread) {
         log_error("Failed to spawn Refloat Main thread.");
         return false;
@@ -2761,7 +2761,7 @@ INIT_FUN(lib_info *info) {
     );
 
     if (have_leds) {
-        d->led_thread = VESC_IF->spawn(led_thd, 1024, "Refloat LEDs", d);
+        d->led_thread = VESC_IF->spawn(led_thd, 2048, "Refloat LEDs", d);
         if (!d->led_thread) {
             log_error("Failed to spawn Refloat LEDs thread.");
             leds_destroy(&d->leds);
