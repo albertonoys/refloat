@@ -312,6 +312,32 @@ static void anim_felony(Leds *leds, const LedStrip *strip, const LedBar *bar, fl
     }
 }
 
+static const uint32_t rainbow_cycle_colors[] = {
+    0x00FFFF00,
+    0x0000FF00,
+    0x0000FFFF,
+    0x000000FF,
+    0x00FF00FF,
+    0x00FF0000,
+};
+static const uint8_t rainbow_cycle_colors_len =
+    sizeof(rainbow_cycle_colors) / sizeof(rainbow_cycle_colors[0]);
+
+static void anim_rainbow_cycle(Leds *leds, const LedStrip *strip, float time) {
+    uint8_t color_idx = (uint8_t) (time / 0.1f) % rainbow_cycle_colors_len;
+    strip_set_color(leds, strip, rainbow_cycle_colors[color_idx], strip->brightness, 1.0f);
+}
+
+static void anim_rgb_fade(Leds *leds, const LedStrip *strip, float time) {
+    strip_set_color(
+        leds,
+        strip,
+        color_wheel((uint8_t) floorf(fmodf(time, 4.0f) * 255.0f)),
+        strip->brightness,
+        1.0f
+    );
+}
+
 static void led_strip_animate(Leds *leds, const LedStrip *strip, const LedBar *bar, float time) {
     time *= bar->speed;
 
@@ -333,6 +359,12 @@ static void led_strip_animate(Leds *leds, const LedStrip *strip, const LedBar *b
         break;
     case LED_MODE_FELONY:
         anim_felony(leds, strip, bar, time);
+        break;
+    case LED_MODE_RAINBOW_CYCLE:
+        anim_rainbow_cycle(leds, strip, time);
+        break;
+    case LED_MODE_RAINBOW_FADE:
+        anim_rgb_fade(leds, strip, time);
         break;
     }
 }
