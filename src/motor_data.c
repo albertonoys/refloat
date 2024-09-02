@@ -25,6 +25,7 @@
 
 void motor_data_reset(MotorData *m) {
     m->duty_smooth = 0;
+    m->erpm_smooth = 0;
 
     m->acceleration = 0;
     m->accel_idx = 0;
@@ -47,6 +48,7 @@ void motor_data_configure(MotorData *m, float frequency) {
 void motor_data_update(MotorData *m) {
     m->erpm = VESC_IF->mc_get_rpm();
     m->abs_erpm = fabsf(m->erpm);
+    m->erpm_smooth = m->erpm_smooth * 0.9 + m->abs_erpm * 0.1;
     m->erpm_sign = sign(m->erpm);
 
     m->current = VESC_IF->mc_get_tot_current_directional_filtered();

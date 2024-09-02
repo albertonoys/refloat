@@ -205,6 +205,8 @@ typedef struct {
     bool startup_pushstart_enabled;
     bool startup_dirtylandings_enabled;
     float brake_current;
+    uint16_t brake_arm_threshold;
+    uint16_t brake_disarm_threshold;
     float ki_limit;
     float booster_angle;
     float booster_ramp;

@@ -1309,6 +1309,46 @@ p, li { white-space: pre-wrap; }
             <suffix> A</suffix>
             <vTx>7</vTx>
         </brake_current>
+        <brake_arm_threshold>
+            <longName>Brake Arm Threshold</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;ERPM threshold below which the brake current is armed, meaning the board will passively lock the wheel. Set to 0 to always arm if ERPM is below the Brake Disarm Threshold.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>CFG_DFLT_BRAKE_ARM_THRESHOLD</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>2000</maxInt>
+            <minInt>0</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>20</stepInt>
+            <valInt>50</valInt>
+            <suffix> ERPM</suffix>
+            <vTx>3</vTx>
+        </brake_arm_threshold>
+        <brake_disarm_threshold>
+            <longName>Brake Disarm Threshold</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;ERPM threshold above which the board will not passively lock the wheel and apply the braking current instead.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>CFG_DFLT_BRAKE_DISARM_THRESHOLD</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>2000</maxInt>
+            <minInt>0</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>100</stepInt>
+            <valInt>500</valInt>
+            <suffix> ERPM</suffix>
+            <vTx>3</vTx>
+        </brake_disarm_threshold>
         <ki_limit>
             <longName>I Term Limit</longName>
             <type>1</type>
@@ -3475,6 +3515,8 @@ p, li { white-space: pre-wrap; }
         <ser>startup_pushstart_enabled</ser>
         <ser>startup_dirtylandings_enabled</ser>
         <ser>brake_current</ser>
+        <ser>brake_arm_threshold</ser>
+        <ser>brake_disarm_threshold</ser>
         <ser>ki_limit</ser>
         <ser>booster_angle</ser>
         <ser>booster_ramp</ser>
@@ -3656,6 +3698,8 @@ p, li { white-space: pre-wrap; }
                     <param>startup_dirtylandings_enabled</param>
                     <param>::sep::Holding</param>
                     <param>brake_current</param>
+                    <param>brake_arm_threshold</param>
+                    <param>brake_disarm_threshold</param>
                 </subgroupParams>
             </subgroup>
             <subgroup>

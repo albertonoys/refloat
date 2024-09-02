@@ -87,6 +87,8 @@ typedef struct {
     int beep_reason;
     bool beeper_enabled;
 
+    bool braking;
+
     Leds leds;
 
     // Lights Control Module - external lights control
@@ -1042,7 +1044,7 @@ static void apply_turntilt(data *d) {
 static void brake(data *d) {
     // Brake timeout logic
     float brake_timeout_length = 1;  // Brake Timeout hard-coded to 1s
-    if (d->motor.abs_erpm > ERPM_MOVING_THRESHOLD || d->brake_timeout == 0) {
+    if (d->motor.erpm_smooth > ERPM_MOVING_THRESHOLD || d->brake_timeout == 0) {
         d->brake_timeout = d->current_time + brake_timeout_length;
     }
 
@@ -1052,21 +1054,23 @@ static void brake(data *d) {
 
     VESC_IF->timeout_reset();
 
-    // If brake current is set to 0 don't do anything
-    if (d->float_conf.brake_current == 0) {
-        return;
+    if (d->motor.erpm_smooth > d->float_conf.brake_disarm_threshold) {
+        d->braking = false;
+    } else if (d->motor.erpm_smooth < d->float_conf.brake_arm_threshold ||
+               d->float_conf.brake_arm_threshold == 0) {
+        d->braking = true;
     }
 
-    // Use brake current over certain ERPM to prevent the board skidding to a stop when deactivated
-    // at speed?
-    if (d->motor.abs_erpm > 2000) {
+    if (d->braking) {
+        // Use DC control mode as it has better holding power
+        // Also improves with 6.05 shorting feature
+        VESC_IF->mc_set_duty(0);
+        d->braking = true;
+    } else {
+        // Use brake current over certain ERPM to prevent the board
+        // skidding to a stop when deactivated at speed
         VESC_IF->mc_set_brake_current(d->float_conf.brake_current);
-        return;
     }
-
-    // Use DC control mode as it has better holding power
-    // Also improves with 6.05 shorting feature
-    VESC_IF->mc_set_duty(0);
 }
 
 static void set_current(data *d, float current) {
