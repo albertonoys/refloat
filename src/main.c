@@ -87,6 +87,8 @@ typedef struct {
     int beep_reason;
     bool beeper_enabled;
 
+    bool idle_brake_active;
+
     Leds leds;
 
     // Lights Control Module - external lights control
@@ -1045,7 +1047,7 @@ static void apply_turntilt(data *d) {
 static void brake(data *d) {
     // Brake timeout logic
     float brake_timeout_length = 1;  // Brake Timeout hard-coded to 1s
-    if (d->motor.abs_erpm > ERPM_MOVING_THRESHOLD || d->brake_timeout == 0) {
+    if (d->motor.abs_erpm_smooth > ERPM_MOVING_THRESHOLD || d->brake_timeout == 0) {
         d->brake_timeout = d->current_time + brake_timeout_length;
     }
 
@@ -1056,20 +1058,19 @@ static void brake(data *d) {
     VESC_IF->timeout_reset();
 
     // If brake current is set to 0 don't do anything
-    if (d->float_conf.brake_current == 0) {
+    if (d->float_conf.brake_current == 0.0f) {
         return;
     }
 
-    // Use brake current over certain ERPM to prevent the board skidding to a stop when deactivated
-    // at speed?
-    if (d->motor.abs_erpm > 2000) {
+    if (d->idle_brake_active && d->motor.abs_erpm < d->float_conf.brake_disarm_threshold) {
+        // Use DC control mode as it has better holding power
+        // Also improves with 6.05 shorting feature
+        VESC_IF->mc_set_duty(0);
+    } else {
+        // Use brake current over certain ERPM to prevent the board skidding to
+        // a stop when deactivated at speed???
         VESC_IF->mc_set_brake_current(d->float_conf.brake_current);
-        return;
     }
-
-    // Use DC control mode as it has better holding power
-    // Also improves with 6.05 shorting feature
-    VESC_IF->mc_set_duty(0);
 }
 
 static void set_current(data *d, float current) {
@@ -1134,6 +1135,14 @@ static void refloat_thd(void *arg) {
         VESC_IF->imu_get_gyro(d->gyro);
 
         motor_data_update(&d->motor);
+
+        if (d->float_conf.brake_arm_threshold == 0 ||
+            (d->state.state != STATE_RUNNING &&
+             d->motor.abs_erpm_smooth < d->float_conf.brake_arm_threshold)) {
+            d->idle_brake_active = true;
+        } else if (d->state.state == STATE_RUNNING) {
+            d->idle_brake_active = false;
+        }
 
         bool remote_connected = false;
         float servo_val = 0;
