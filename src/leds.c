@@ -82,6 +82,9 @@ static const uint32_t colors[] = {
 #define FOOTPAD_SENSOR_COLOR 0x0000C0FF
 #define RED_BAR_COLOR 0x00FF3828
 #define BATTERY10_BAR_COLOR 0x00FF5038
+#define CONFIRM_COLOR 0x00A040FF
+
+#define CONFIRM_ANIMATION_DURATION 0.8f
 
 static uint32_t color_blend(uint32_t color1, uint32_t color2, float blend) {
     if (blend <= 0.0f) {
@@ -458,6 +461,55 @@ static void anim_disabled(Leds *leds, const LedStrip *strip, float time) {
     anim_pulse(leds, strip, &disabled_bar, time / 2.0f, strip->length / 3.0f);
 }
 
+static void anim_confirm(Leds *leds, const LedStrip *strip, float time) {
+    time = fminf(time, 1.0f);
+
+    const float blend_time = 0.06f;
+    float blend = 1.0f;
+    if (time <= blend_time) {
+        blend = time / blend_time;
+    } else if (time >= 1.0f - blend_time) {
+        blend = (1.0f - time) / blend_time;
+    }
+
+    const float period = 1.0f - 2 * blend_time;
+    const float half_period = period * 0.5f;
+    time = fminf(time - blend_time, period);
+
+    const float pulse_ratio = 1.5f;
+    float p;
+    if (time <= half_period) {
+        p = time / half_period * pulse_ratio;
+    } else {
+        p = (period - time) / half_period * pulse_ratio;
+    }
+
+    if (p > 1.0f) {
+        p = 2.0f - p;
+    }
+
+    p = p * p;
+
+    float sides = strip->length / 12.0f;
+    float center = strip->length / 8.0f;
+    float length = strip->length / 2.0f - sides - center;
+    float offset = sides + length * (1.0f - p);
+    float feather = strip->length / 4.0f;
+
+    for (uint8_t i = 0; i < strip->length; ++i) {
+        float d;
+        if (i < strip->length / 2) {
+            d = i - offset + 1.0f;
+        } else {
+            d = strip->length - offset - i;
+        }
+
+        float k = clampf(d / feather, 0.0f, 1.0f);
+        uint32_t color = color_blend(COLOR_BLACK, CONFIRM_COLOR, k);
+        led_set_color(leds, strip, i, color, strip->brightness, blend);
+    }
+}
+
 static void status_animate(
     Leds *leds, const LedStrip *strip, float current_time, float blend, float idle_blend
 ) {
@@ -508,6 +560,11 @@ static void status_animate(
         if (leds->left_sensor > 0.0f || leds->right_sensor > 0.0f) {
             anim_fs_state(leds, strip, reverse, blend);
         }
+    }
+
+    float conf_prog = (current_time - leds->confirm_animation_start) / CONFIRM_ANIMATION_DURATION;
+    if (conf_prog <= 1.0f) {
+        anim_confirm(leds, strip, conf_prog);
     }
 }
 
@@ -718,6 +775,8 @@ bool leds_init(Leds *leds, CfgHwLeds *hw_cfg, const CfgLeds *cfg, FootpadSensorS
     leds->direction_forward = true;
     leds->headlights_time = 0.0f;
     leds->animation_start = 0;
+
+    leds->confirm_animation_start = -10.0f;  // Just so it doesn't trigger right after init
 
     leds->headlights_trans.transition = LED_TRANS_FADE;
     leds->headlights_trans.split = 1.0f;
@@ -1088,6 +1147,17 @@ void leds_update(Leds *leds, const State *state, FootpadSensorState fs_state) {
     }
 
     led_driver_paint(&leds->led_driver, leds->led_data, leds->led_count);
+}
+
+void leds_status_confirm(Leds *leds) {
+    if (!leds->led_data) {
+        return;
+    }
+
+    float current_time = VESC_IF->system_time();
+    if (current_time - leds->confirm_animation_start > CONFIRM_ANIMATION_DURATION) {
+        leds->confirm_animation_start = current_time;
+    }
 }
 
 void leds_destroy(Leds *leds) {
