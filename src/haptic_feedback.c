@@ -106,12 +106,16 @@ void haptic_feedback_update(
     bool should_be_playing = false;
     if (hf->type_playing != HAPTIC_FEEDBACK_NONE) {
         uint8_t beats = get_beats(hf->type_playing);
-        float period = tone_length * beats;
-        float time = fmodf(current_time - hf->start_time, period);
-        uint8_t beat = floorf(time / tone_length);
-        uint8_t off_beat = beats > 2 ? beats - 2 : 0;
+        if (beats == 0) {
+            should_be_playing = true;
+        } else {
+            float period = tone_length * beats;
+            float time = fmodf(current_time - hf->start_time, period);
+            uint8_t beat = floorf(time / tone_length);
+            uint8_t off_beat = beats > 2 ? beats - 2 : 0;
 
-        should_be_playing = beats == 0 || (beat % 2 == 0 && (off_beat == 0 || beat != off_beat));
+            should_be_playing = beat % 2 == 0 && (off_beat == 0 || beat != off_beat);
+        }
     }
 
     if (hf->is_playing && !should_be_playing) {
